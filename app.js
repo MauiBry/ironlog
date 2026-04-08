@@ -18,14 +18,22 @@ const DB = {
   }
 };
 
-// --- Exercise Database ---
+// --- Muscle Groups ---
 const MUSCLE_GROUPS = {
-  push: { name: "Push", muscles: ["Chest", "Shoulders", "Triceps"], color: "#E8453C" },
+  push: { name: "Push", muscles: ["Chest", "Shoulders", "Triceps"], color: "#EF4444" },
   pull: { name: "Pull", muscles: ["Back", "Biceps", "Forearms"], color: "#3B82F6" },
-  legs: { name: "Legs", muscles: ["Quads", "Hamstrings", "Glutes", "Calves"], color: "#10B981" },
-  core: { name: "Core", muscles: ["Abs", "Obliques", "Lower Back"], color: "#F59E0B" },
+  legs: { name: "Legs", muscles: ["Quads", "Hamstrings", "Glutes", "Calves"], color: "#F97316" },
+  core: { name: "Core", muscles: ["Abs", "Obliques", "Lower Back"], color: "#FBBF24" },
+  upper: { name: "Upper", muscles: ["Chest", "Back", "Shoulders", "Arms"], color: "#3B82F6" },
+  lower: { name: "Lower", muscles: ["Quads", "Hamstrings", "Glutes", "Calves"], color: "#F97316" },
+  full: { name: "Full Body", muscles: ["All Major Groups"], color: "#8B5CF6" },
+  chest: { name: "Chest", muscles: ["Chest", "Triceps"], color: "#EF4444" },
+  back: { name: "Back", muscles: ["Back", "Biceps"], color: "#3B82F6" },
+  shoulders: { name: "Shoulders", muscles: ["Shoulders", "Traps"], color: "#F97316" },
+  arms: { name: "Arms", muscles: ["Biceps", "Triceps", "Forearms"], color: "#FBBF24" },
 };
 
+// --- Exercise Database ---
 const EXERCISES = {
   push: [
     { id: "bp", name: "Bench Press", equipment: "Barbell", muscles: ["Chest", "Triceps"], sets: 4, reps: "8-10", rest: 90 },
@@ -57,17 +65,123 @@ const EXERCISES = {
     { id: "bc", name: "Bicycle Crunch", equipment: "Bodyweight", muscles: ["Abs", "Obliques"], sets: 3, reps: "20", rest: 30 },
     { id: "db", name: "Dead Bug", equipment: "Bodyweight", muscles: ["Abs", "Lower Back"], sets: 3, reps: "10 each", rest: 30 },
   ],
+  upper: [
+    { id: "bp", name: "Bench Press", equipment: "Barbell", muscles: ["Chest", "Triceps"], sets: 4, reps: "8-10", rest: 90 },
+    { id: "br", name: "Barbell Row", equipment: "Barbell", muscles: ["Back", "Biceps"], sets: 4, reps: "8-10", rest: 90 },
+    { id: "ohp", name: "Overhead Press", equipment: "Barbell", muscles: ["Shoulders"], sets: 3, reps: "8-10", rest: 90 },
+    { id: "pu", name: "Pull-Up", equipment: "Bodyweight", muscles: ["Back", "Biceps"], sets: 3, reps: "6-10", rest: 90 },
+    { id: "lr", name: "Lateral Raise", equipment: "Dumbbells", muscles: ["Shoulders"], sets: 3, reps: "15-20", rest: 45 },
+    { id: "dc", name: "Dumbbell Curl", equipment: "Dumbbells", muscles: ["Biceps"], sets: 3, reps: "10-12", rest: 60 },
+    { id: "cpf", name: "Cable Pushdown", equipment: "Cable", muscles: ["Triceps"], sets: 3, reps: "12-15", rest: 45 },
+  ],
+  lower: [
+    { id: "sq", name: "Barbell Squat", equipment: "Barbell", muscles: ["Quads", "Glutes"], sets: 4, reps: "6-8", rest: 120 },
+    { id: "rdl", name: "Romanian Deadlift", equipment: "Barbell", muscles: ["Hamstrings", "Glutes"], sets: 4, reps: "8-10", rest: 90 },
+    { id: "lp", name: "Leg Press", equipment: "Machine", muscles: ["Quads", "Glutes"], sets: 3, reps: "10-12", rest: 90 },
+    { id: "lc", name: "Leg Curl", equipment: "Machine", muscles: ["Hamstrings"], sets: 3, reps: "12-15", rest: 60 },
+    { id: "wl", name: "Walking Lunge", equipment: "Dumbbells", muscles: ["Quads", "Glutes"], sets: 3, reps: "12 each", rest: 60 },
+    { id: "cr", name: "Calf Raise", equipment: "Machine", muscles: ["Calves"], sets: 4, reps: "15-20", rest: 45 },
+  ],
+  full: [
+    { id: "sq", name: "Barbell Squat", equipment: "Barbell", muscles: ["Quads", "Glutes"], sets: 3, reps: "8-10", rest: 120 },
+    { id: "bp", name: "Bench Press", equipment: "Barbell", muscles: ["Chest", "Triceps"], sets: 3, reps: "8-10", rest: 90 },
+    { id: "br", name: "Barbell Row", equipment: "Barbell", muscles: ["Back", "Biceps"], sets: 3, reps: "8-10", rest: 90 },
+    { id: "ohp", name: "Overhead Press", equipment: "Barbell", muscles: ["Shoulders"], sets: 3, reps: "8-10", rest: 90 },
+    { id: "rdl", name: "Romanian Deadlift", equipment: "Barbell", muscles: ["Hamstrings"], sets: 3, reps: "10-12", rest: 90 },
+    { id: "pu", name: "Pull-Up", equipment: "Bodyweight", muscles: ["Back", "Biceps"], sets: 3, reps: "6-10", rest: 90 },
+  ],
+  chest: [
+    { id: "bp", name: "Bench Press", equipment: "Barbell", muscles: ["Chest"], sets: 4, reps: "8-10", rest: 90 },
+    { id: "ibp", name: "Incline Bench Press", equipment: "Barbell", muscles: ["Upper Chest"], sets: 3, reps: "8-10", rest: 90 },
+    { id: "idf", name: "Dumbbell Fly", equipment: "Dumbbells", muscles: ["Chest"], sets: 3, reps: "12-15", rest: 60 },
+    { id: "cpf", name: "Cable Pushdown", equipment: "Cable", muscles: ["Triceps"], sets: 3, reps: "12-15", rest: 45 },
+    { id: "td", name: "Tricep Dip", equipment: "Bodyweight", muscles: ["Triceps", "Chest"], sets: 3, reps: "10-12", rest: 60 },
+  ],
+  back: [
+    { id: "dl", name: "Deadlift", equipment: "Barbell", muscles: ["Back"], sets: 4, reps: "5-6", rest: 120 },
+    { id: "br", name: "Barbell Row", equipment: "Barbell", muscles: ["Back"], sets: 4, reps: "8-10", rest: 90 },
+    { id: "pu", name: "Pull-Up", equipment: "Bodyweight", muscles: ["Back", "Biceps"], sets: 3, reps: "6-10", rest: 90 },
+    { id: "fc", name: "Face Pull", equipment: "Cable", muscles: ["Back"], sets: 3, reps: "15-20", rest: 45 },
+    { id: "dc", name: "Dumbbell Curl", equipment: "Dumbbells", muscles: ["Biceps"], sets: 3, reps: "10-12", rest: 60 },
+  ],
+  shoulders: [
+    { id: "ohp", name: "Overhead Press", equipment: "Barbell", muscles: ["Shoulders"], sets: 4, reps: "8-10", rest: 90 },
+    { id: "lr", name: "Lateral Raise", equipment: "Dumbbells", muscles: ["Shoulders"], sets: 4, reps: "15-20", rest: 45 },
+    { id: "fc", name: "Face Pull", equipment: "Cable", muscles: ["Rear Delts"], sets: 3, reps: "15-20", rest: 45 },
+    { id: "su", name: "Shrugs", equipment: "Dumbbells", muscles: ["Traps"], sets: 3, reps: "12-15", rest: 60 },
+  ],
+  arms: [
+    { id: "dc", name: "Barbell Curl", equipment: "Barbell", muscles: ["Biceps"], sets: 4, reps: "8-10", rest: 60 },
+    { id: "cpf", name: "Cable Pushdown", equipment: "Cable", muscles: ["Triceps"], sets: 4, reps: "10-12", rest: 60 },
+    { id: "hc", name: "Hammer Curl", equipment: "Dumbbells", muscles: ["Biceps"], sets: 3, reps: "10-12", rest: 60 },
+    { id: "ske", name: "Skull Crusher", equipment: "Barbell", muscles: ["Triceps"], sets: 3, reps: "10-12", rest: 60 },
+    { id: "wc", name: "Wrist Curl", equipment: "Dumbbells", muscles: ["Forearms"], sets: 3, reps: "15-20", rest: 45 },
+  ],
 };
 
-const PPL_SCHEDULE = [
-  { day: "Mon", type: "push", label: "Push Day" },
-  { day: "Tue", type: "pull", label: "Pull Day" },
-  { day: "Wed", type: "legs", label: "Leg Day" },
-  { day: "Thu", type: "push", label: "Push Day" },
-  { day: "Fri", type: "pull", label: "Pull Day" },
-  { day: "Sat", type: "legs", label: "Leg Day" },
-  { day: "Sun", type: null, label: "Rest / Active Recovery" },
-];
+// --- Programs ---
+const PROGRAMS = {
+  ppl: {
+    id: "ppl",
+    name: "Push / Pull / Legs",
+    desc: "6 days per week. High volume, targets each muscle group twice.",
+    schedule: [
+      { day: "Mon", type: "push", label: "Push Day" },
+      { day: "Tue", type: "pull", label: "Pull Day" },
+      { day: "Wed", type: "legs", label: "Leg Day" },
+      { day: "Thu", type: "push", label: "Push Day" },
+      { day: "Fri", type: "pull", label: "Pull Day" },
+      { day: "Sat", type: "legs", label: "Leg Day" },
+      { day: "Sun", type: null, label: "Rest / Active Recovery" },
+    ],
+    preview: ["Push", "Pull", "Legs", "Push", "Pull", "Legs", "Rest"],
+  },
+  upper_lower: {
+    id: "upper_lower",
+    name: "Upper / Lower",
+    desc: "4 days per week. Balanced split with built-in recovery days.",
+    schedule: [
+      { day: "Mon", type: "upper", label: "Upper Body" },
+      { day: "Tue", type: "lower", label: "Lower Body" },
+      { day: "Wed", type: null, label: "Rest / Active Recovery" },
+      { day: "Thu", type: "upper", label: "Upper Body" },
+      { day: "Fri", type: "lower", label: "Lower Body" },
+      { day: "Sat", type: null, label: "Rest / Active Recovery" },
+      { day: "Sun", type: null, label: "Rest / Active Recovery" },
+    ],
+    preview: ["Upper", "Lower", "Rest", "Upper", "Lower", "Rest", "Rest"],
+  },
+  full_body: {
+    id: "full_body",
+    name: "Full Body",
+    desc: "3 days per week. Great for beginners or time-constrained lifters.",
+    schedule: [
+      { day: "Mon", type: "full", label: "Full Body" },
+      { day: "Tue", type: null, label: "Rest / Active Recovery" },
+      { day: "Wed", type: "full", label: "Full Body" },
+      { day: "Thu", type: null, label: "Rest / Active Recovery" },
+      { day: "Fri", type: "full", label: "Full Body" },
+      { day: "Sat", type: null, label: "Rest / Active Recovery" },
+      { day: "Sun", type: null, label: "Rest / Active Recovery" },
+    ],
+    preview: ["Full", "Rest", "Full", "Rest", "Full", "Rest", "Rest"],
+  },
+  bro: {
+    id: "bro",
+    name: "Body Part Split",
+    desc: "5 days per week. Classic bro split hitting one group per day.",
+    schedule: [
+      { day: "Mon", type: "chest", label: "Chest & Triceps" },
+      { day: "Tue", type: "back", label: "Back & Biceps" },
+      { day: "Wed", type: "shoulders", label: "Shoulders & Traps" },
+      { day: "Thu", type: "legs", label: "Leg Day" },
+      { day: "Fri", type: "arms", label: "Arms" },
+      { day: "Sat", type: null, label: "Rest / Active Recovery" },
+      { day: "Sun", type: null, label: "Rest / Active Recovery" },
+    ],
+    preview: ["Chest", "Back", "Shldrs", "Legs", "Arms", "Rest", "Rest"],
+  },
+};
 
 // --- State ---
 let state = {
@@ -77,7 +191,8 @@ let state = {
   restTimer: null,
   restTimerInterval: null,
   restTimeLeft: 0,
-  profile: DB.get('profile', null), // { name, startWeight, goalWeight }
+  profile: DB.get('profile', null),
+  program: DB.get('program', null),
   workoutLog: DB.get('workoutLog', []),
   bodyWeight: DB.get('bodyWeight', null),
   weightHistory: DB.get('weightHistory', []),
@@ -85,7 +200,6 @@ let state = {
   lastRecoveryUpdate: DB.get('lastRecoveryUpdate', Date.now()),
   planConfig: DB.get('planConfig', {
     goal: "fat_loss",
-    split: "ppl",
     daysPerWeek: 6,
     duration: 75,
     experience: "intermediate",
@@ -99,9 +213,15 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
+function getSchedule() {
+  const prog = PROGRAMS[state.program] || PROGRAMS.ppl;
+  return prog.schedule;
+}
+
 function getTodaySchedule() {
   const d = new Date().getDay();
-  return PPL_SCHEDULE[d === 0 ? 6 : d - 1];
+  const schedule = getSchedule();
+  return schedule[d === 0 ? 6 : d - 1];
 }
 
 function getTodayIndex() {
@@ -111,6 +231,7 @@ function getTodayIndex() {
 
 function save() {
   DB.set('profile', state.profile);
+  DB.set('program', state.program);
   DB.set('workoutLog', state.workoutLog);
   DB.set('bodyWeight', state.bodyWeight);
   DB.set('weightHistory', state.weightHistory);
@@ -133,13 +254,16 @@ function tickRecovery() {
   }
 }
 
+function getGroupForType(type) {
+  return MUSCLE_GROUPS[type] || { name: type, muscles: [], color: "#3B82F6" };
+}
+
 // --- Render Engine ---
 function render() {
   const content = $('.content');
   if (!content) return;
 
-  // Show onboarding if no profile
-  if (!state.profile) {
+  if (!state.profile || !state.program) {
     renderOnboarding(content);
     const tabBar = $('.tab-bar');
     if (tabBar) tabBar.style.display = 'none';
@@ -148,11 +272,9 @@ function render() {
     return;
   }
 
-  // Show tab bar
   const tabBar = $('.tab-bar');
   if (tabBar) tabBar.style.display = 'flex';
 
-  // Update header with user name
   const headerUser = $('.header-user');
   if (headerUser) headerUser.textContent = state.profile.name;
 
@@ -170,6 +292,11 @@ function render() {
 
 // --- Onboarding ---
 function renderOnboarding(el) {
+  if (state.profile && !state.program) {
+    renderProgramSelection(el);
+    return;
+  }
+
   el.innerHTML = `
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;padding:20px">
       <div style="font-size:48px;margin-bottom:16px">🏋️</div>
@@ -205,13 +332,13 @@ function renderOnboarding(el) {
             style="width:100%;background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:14px;color:var(--text);font-size:16px;font-family:var(--font-mono);outline:none" />
         </div>
 
-        <button onclick="completeOnboarding()" style="
-          width:100%;padding:16px;background:var(--accent);color:#0B1120;
+        <button onclick="completeProfileStep()" style="
+          width:100%;padding:16px;background:var(--accent);color:#fff;
           border:none;border-radius:14px;font-size:16px;font-weight:700;
           cursor:pointer;font-family:var(--font-display);
-          box-shadow:0 4px 20px rgba(16,185,129,0.3);
+          box-shadow:0 4px 20px var(--accent-glow);
         ">
-          Let's Go
+          Next — Choose Program
         </button>
 
         <div id="onboard-error" style="color:var(--danger);font-size:13px;text-align:center;margin-top:12px;display:none"></div>
@@ -224,7 +351,68 @@ function renderOnboarding(el) {
   }, 100);
 }
 
-window.completeOnboarding = function() {
+function renderProgramSelection(el) {
+  let selectedProgram = state._tempProgram || null;
+
+  let html = `
+    <div style="display:flex;flex-direction:column;align-items:center;padding:20px 0">
+      <div style="font-size:32px;margin-bottom:12px">📋</div>
+      <div style="font-size:22px;font-weight:800;margin-bottom:4px;text-align:center">
+        Choose Your Program
+      </div>
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:24px;text-align:center">
+        You can change this anytime in Settings
+      </div>
+    </div>`;
+
+  Object.values(PROGRAMS).forEach(prog => {
+    const isSelected = selectedProgram === prog.id;
+    html += `
+      <div class="program-card ${isSelected ? 'selected' : ''}" onclick="selectOnboardProgram('${prog.id}')">
+        <div class="program-card-title">${prog.name}</div>
+        <div class="program-card-desc">${prog.desc}</div>
+        <div class="program-card-schedule">
+          ${prog.preview.map((d, i) => {
+            const dayLabels = ['M','T','W','T','F','S','S'];
+            const isRest = d === 'Rest';
+            return `<div class="program-card-day" style="${isRest ? '' : 'color:var(--accent)'}">${dayLabels[i]}<br>${d}</div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  });
+
+  html += `
+    <button id="confirm-program-btn" onclick="confirmProgram()" style="
+      width:100%;padding:16px;background:${selectedProgram ? 'var(--accent)' : 'var(--card-border)'};
+      color:${selectedProgram ? '#fff' : 'var(--text-muted)'};
+      border:none;border-radius:14px;font-size:16px;font-weight:700;
+      cursor:pointer;font-family:var(--font-display);
+      box-shadow:${selectedProgram ? '0 4px 20px var(--accent-glow)' : 'none'};
+      margin-top:12px;transition:all 0.2s;
+      pointer-events:${selectedProgram ? 'auto' : 'none'};
+    ">
+      ${selectedProgram ? "Let's Go" : "Select a program"}
+    </button>`;
+
+  el.innerHTML = html;
+}
+
+window.selectOnboardProgram = function(progId) {
+  state._tempProgram = progId;
+  const content = $('.content');
+  if (content) renderProgramSelection(content);
+};
+
+window.confirmProgram = function() {
+  if (!state._tempProgram) return;
+  state.program = state._tempProgram;
+  delete state._tempProgram;
+  save();
+  render();
+  if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+};
+
+window.completeProfileStep = function() {
   const name = document.getElementById('onboard-name')?.value.trim();
   const weight = parseFloat(document.getElementById('onboard-weight')?.value);
   const goal = parseFloat(document.getElementById('onboard-goal')?.value);
@@ -264,6 +452,7 @@ function renderTrain(el) {
   const schedule = getTodaySchedule();
   const dayIdx = getTodayIndex();
   const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const currentSchedule = getSchedule();
 
   let html = `
     <div style="margin-bottom:20px">
@@ -272,8 +461,8 @@ function renderTrain(el) {
     </div>`;
 
   if (schedule.type) {
-    const group = MUSCLE_GROUPS[schedule.type];
-    const exercises = EXERCISES[schedule.type];
+    const group = getGroupForType(schedule.type);
+    const exercises = EXERCISES[schedule.type] || [];
 
     html += `<div class="card" style="background:linear-gradient(135deg,var(--card),${group.color}15)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -307,9 +496,9 @@ function renderTrain(el) {
     <div style="font-size:13px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">This Week</div>
     <div class="week-grid">`;
 
-  PPL_SCHEDULE.forEach((d, i) => {
+  currentSchedule.forEach((d, i) => {
     const isToday = i === dayIdx;
-    const grp = d.type ? MUSCLE_GROUPS[d.type] : null;
+    const grp = d.type ? getGroupForType(d.type) : null;
     html += `<div class="day-pill ${isToday ? 'today' : ''}" ${d.type ? `onclick="startWorkout('${d.type}')"` : ''}>
       <div class="day-pill-label" style="color:${isToday ? 'var(--accent)' : 'var(--text-muted)'}">${d.day}</div>
       <div class="day-pill-type" style="color:${grp ? grp.color : 'var(--text-muted)'}">${grp ? grp.name : 'Rest'}</div>
@@ -322,8 +511,8 @@ function renderTrain(el) {
 
 function renderActiveWorkout(el) {
   const { type, startedAt } = state.activeWorkout;
-  const group = MUSCLE_GROUPS[type];
-  const exercises = EXERCISES[type];
+  const group = getGroupForType(type);
+  const exercises = EXERCISES[type] || [];
   const totalSets = exercises.reduce((s, e) => s + e.sets, 0);
   const done = Object.keys(state.completedSets).length;
   const elapsed = Math.round((Date.now() - startedAt) / 60000);
@@ -334,7 +523,7 @@ function renderActiveWorkout(el) {
         <div style="font-size:22px;font-weight:700">${group.name} Day</div>
         <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${done}/${totalSets} sets · ~${elapsed} min</div>
       </div>
-      <button onclick="finishWorkout()" style="background:var(--accent);color:#0B1120;border:none;border-radius:10px;padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;font-family:var(--font-display)">Finish</button>
+      <button onclick="finishWorkout()" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:600;font-size:14px;cursor:pointer;font-family:var(--font-display)">Finish</button>
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:${(done / totalSets) * 100}%"></div></div>`;
 
@@ -363,7 +552,7 @@ function renderActiveWorkout(el) {
 
 // --- Body Tab ---
 function renderBody(el) {
-  const recoveryColors = (val) => val >= 80 ? '#10B981' : val >= 50 ? '#F59E0B' : '#E8453C';
+  const recoveryColors = (val) => val >= 80 ? '#22C55E' : val >= 50 ? '#FBBF24' : '#EF4444';
 
   const hist = state.weightHistory;
   let sparkHtml = '';
@@ -402,7 +591,7 @@ function renderBody(el) {
       ${sparkHtml}
       <div style="margin-top:12px;display:flex;gap:8px">
         <input type="number" id="weight-input" value="${state.bodyWeight}" style="flex:1" />
-        <button onclick="logWeight()" style="background:var(--accent-dim);color:var(--accent);border:1px solid rgba(16,185,129,0.25);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">Log</button>
+        <button onclick="logWeight()" style="background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">Log</button>
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center">
         Goal: ${state.profile.goalWeight} lb · ${Math.abs(state.bodyWeight - state.profile.goalWeight)} lb to ${state.bodyWeight > state.profile.goalWeight ? 'go' : 'gained'}
@@ -414,10 +603,12 @@ function renderBody(el) {
       <div class="stat-grid">`;
 
   Object.entries(state.recovery).forEach(([key, val]) => {
+    const grp = MUSCLE_GROUPS[key];
+    if (!grp) return;
     const color = recoveryColors(val);
     html += `<div class="stat-box">
       <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span style="font-size:12px;font-weight:500">${MUSCLE_GROUPS[key].name}</span>
+        <span style="font-size:12px;font-weight:500">${grp.name}</span>
         <span style="font-size:12px;color:${color};font-family:var(--font-mono)">${val}%</span>
       </div>
       <div style="height:3px;background:var(--card-border);border-radius:2px;overflow:hidden">
@@ -428,7 +619,7 @@ function renderBody(el) {
 
   html += `</div>
       <div style="display:flex;gap:12px;margin-top:12px;justify-content:center">
-        ${[{ l: 'Fresh', c: '#10B981' }, { l: 'Moderate', c: '#F59E0B' }, { l: 'Fatigued', c: '#E8453C' }].map(x =>
+        ${[{ l: 'Fresh', c: '#22C55E' }, { l: 'Moderate', c: '#FBBF24' }, { l: 'Fatigued', c: '#EF4444' }].map(x =>
           `<div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted)">
             <div style="width:8px;height:8px;border-radius:50%;background:${x.c}"></div>${x.l}
           </div>`
@@ -442,6 +633,32 @@ function renderBody(el) {
 // --- Plan Tab ---
 function renderPlan(el) {
   const cfg = state.planConfig;
+  const currentProg = PROGRAMS[state.program] || PROGRAMS.ppl;
+
+  let html = `<div style="font-size:22px;font-weight:700;margin-bottom:16px">Training Plan</div>`;
+
+  // Current program card with change button
+  html += `<div class="card" style="border-color:var(--accent);border-width:1px;background:linear-gradient(135deg,var(--card),rgba(59,130,246,0.06))">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div>
+        <div style="font-size:12px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Current Program</div>
+        <div style="font-size:18px;font-weight:700">${currentProg.name}</div>
+      </div>
+      <button onclick="showProgramModal()" style="
+        background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,130,246,0.25);
+        border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;
+        font-family:var(--font-display);
+      ">Change</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">${currentProg.desc}</div>
+    <div class="program-card-schedule">
+      ${currentProg.preview.map((d, i) => {
+        const dayLabels = ['M','T','W','T','F','S','S'];
+        const isRest = d === 'Rest';
+        return `<div class="program-card-day" style="${isRest ? '' : 'color:var(--accent)'}">${dayLabels[i]}<br>${d}</div>`;
+      }).join('')}
+    </div>
+  </div>`;
 
   const sections = [
     { label: 'Goal', key: 'goal', options: [
@@ -449,12 +666,6 @@ function renderPlan(el) {
       { value: 'muscle', label: 'Build Muscle' },
       { value: 'strength', label: 'Strength' },
       { value: 'endurance', label: 'Endurance' },
-    ]},
-    { label: 'Split', key: 'split', options: [
-      { value: 'ppl', label: 'Push/Pull/Legs' },
-      { value: 'upper_lower', label: 'Upper/Lower' },
-      { value: 'full_body', label: 'Full Body' },
-      { value: 'bro', label: 'Body Part Split' },
     ]},
     { label: 'Experience', key: 'experience', options: [
       { value: 'beginner', label: 'Beginner' },
@@ -468,8 +679,6 @@ function renderPlan(el) {
     ]},
   ];
 
-  let html = `<div style="font-size:22px;font-weight:700;margin-bottom:16px">Training Plan</div>`;
-
   sections.forEach((sec) => {
     html += `<div class="card">
       <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">${sec.label}</div>
@@ -480,25 +689,13 @@ function renderPlan(el) {
   });
 
   html += `<div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div>
-        <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">Days / Week</div>
-        <div style="font-size:20px;font-weight:700;margin-top:2px;font-family:var(--font-mono)">${cfg.daysPerWeek}</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        ${[3,4,5,6,7].map(d => `<button onclick="setPlan('daysPerWeek',${d})" style="width:36px;height:36px;border-radius:8px;border:none;background:${cfg.daysPerWeek===d?'var(--accent)':'var(--bg)'};color:${cfg.daysPerWeek===d?'#0B1120':'var(--text-muted)'};font-weight:600;font-size:14px;cursor:pointer">${d}</button>`).join('')}
-      </div>
-    </div>
-    <div style="border-top:1px solid var(--card-border);padding-top:12px">
+    <div style="border-bottom:1px solid var(--card-border);padding-bottom:12px;margin-bottom:12px">
       <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Session Duration</div>
       <div style="display:flex;align-items:center;gap:12px">
         <input type="range" min="30" max="120" step="5" value="${cfg.duration}" oninput="setPlan('duration',Number(this.value));document.getElementById('dur-val').textContent=this.value+'m'" />
         <span id="dur-val" style="font-size:16px;font-weight:600;font-family:var(--font-mono);min-width:55px">${cfg.duration}m</span>
       </div>
     </div>
-  </div>`;
-
-  html += `<div class="card">
     <div class="toggle-row">
       <span style="font-size:14px">Warm-up Sets</span>
       <button class="toggle-track ${cfg.warmup ? 'on' : 'off'}" onclick="setPlan('warmup',${!cfg.warmup})">
@@ -534,6 +731,91 @@ function renderPlan(el) {
 
   el.innerHTML = html;
 }
+
+// --- Program Change Modal ---
+window.showProgramModal = function() {
+  const existing = document.getElementById('program-modal');
+  if (existing) existing.remove();
+
+  let tempSelection = state.program;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'program-modal';
+
+  function renderModalContent() {
+    let html = `<div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:4px">Change Program</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">Select a new training split</div>`;
+
+    Object.values(PROGRAMS).forEach(prog => {
+      const isSelected = tempSelection === prog.id;
+      const isCurrent = state.program === prog.id;
+      html += `
+        <div class="program-card ${isSelected ? 'selected' : ''}" data-prog="${prog.id}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="program-card-title">${prog.name}</div>
+            ${isCurrent ? '<span style="font-size:11px;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:4px">Current</span>' : ''}
+          </div>
+          <div class="program-card-desc">${prog.desc}</div>
+          <div class="program-card-schedule">
+            ${prog.preview.map((d, i) => {
+              const dayLabels = ['M','T','W','T','F','S','S'];
+              const isRest = d === 'Rest';
+              return `<div class="program-card-day" style="${isRest ? '' : 'color:var(--accent)'}">${dayLabels[i]}<br>${d}</div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    });
+
+    html += `
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button id="modal-cancel" style="
+          flex:1;padding:14px;background:var(--card-border);color:var(--text-muted);
+          border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;
+          font-family:var(--font-display);
+        ">Cancel</button>
+        <button id="modal-confirm" style="
+          flex:1;padding:14px;background:var(--accent);color:#fff;
+          border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;
+          font-family:var(--font-display);box-shadow:0 4px 20px var(--accent-glow);
+        ">Confirm</button>
+      </div>
+    </div>`;
+
+    overlay.innerHTML = html;
+  }
+
+  renderModalContent();
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+      return;
+    }
+    if (e.target.id === 'modal-cancel') {
+      overlay.remove();
+      return;
+    }
+    if (e.target.id === 'modal-confirm') {
+      state.program = tempSelection;
+      save();
+      overlay.remove();
+      render();
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+      return;
+    }
+    const card = e.target.closest('.program-card');
+    if (card) {
+      tempSelection = card.dataset.prog;
+      renderModalContent();
+    }
+  });
+};
+
+// --- Log Tab ---
 function renderLog(el) {
   const log = state.workoutLog;
 
@@ -546,7 +828,9 @@ function renderLog(el) {
     <div class="card">
       <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Weekly Volume Targets</div>`;
 
-  Object.entries(MUSCLE_GROUPS).forEach(([key, grp]) => {
+  ['push', 'pull', 'legs', 'core'].forEach((key) => {
+    const grp = MUSCLE_GROUPS[key];
+    if (!grp) return;
     const weekSets = log.filter(w => w.type === key).reduce((s, w) => s + w.setsCompleted, 0);
     const target = key === 'core' ? 12 : 20;
     html += `<div style="margin-bottom:10px">
@@ -570,7 +854,8 @@ function renderLog(el) {
     </div>`;
   } else {
     log.forEach((entry) => {
-      const color = MUSCLE_GROUPS[entry.type]?.color || 'var(--accent)';
+      const grp = getGroupForType(entry.type);
+      const color = grp.color || 'var(--accent)';
       html += `<div class="card log-entry" style="border-left-color:${color}">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
@@ -611,15 +896,17 @@ window.toggleSet = function(exId, setIdx, restSec) {
 
 window.finishWorkout = function() {
   if (!state.activeWorkout) return;
-  const exercises = EXERCISES[state.activeWorkout.type];
+  const exercises = EXERCISES[state.activeWorkout.type] || [];
   const totalSets = exercises.reduce((s, e) => s + e.sets, 0);
   const done = Object.keys(state.completedSets).length;
   const now = new Date();
 
+  const group = getGroupForType(state.activeWorkout.type);
+
   const entry = {
     date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     type: state.activeWorkout.type,
-    label: MUSCLE_GROUPS[state.activeWorkout.type].name,
+    label: group.name,
     duration: Math.round((Date.now() - state.activeWorkout.startedAt) / 60000),
     setsCompleted: done,
     totalSets,
@@ -627,7 +914,9 @@ window.finishWorkout = function() {
   };
 
   state.workoutLog.unshift(entry);
-  state.recovery[state.activeWorkout.type] = Math.max(0, state.recovery[state.activeWorkout.type] - 60);
+  if (state.recovery[state.activeWorkout.type] !== undefined) {
+    state.recovery[state.activeWorkout.type] = Math.max(0, state.recovery[state.activeWorkout.type] - 60);
+  }
   state.lastRecoveryUpdate = Date.now();
   state.activeWorkout = null;
   state.completedSets = {};
@@ -665,20 +954,19 @@ window.setPlan = function(key, value) {
 
 window.resetProfile = function() {
   if (!confirm('This will reset your profile and all data. Are you sure?')) return;
-  // Clear all ironlog data from localStorage
   const keys = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (k && k.startsWith('ironlog_')) keys.push(k);
   }
   keys.forEach(k => localStorage.removeItem(k));
-  // Reset state
   state.profile = null;
+  state.program = null;
   state.workoutLog = [];
   state.bodyWeight = null;
   state.weightHistory = [];
   state.recovery = { push: 100, pull: 100, legs: 100, core: 100 };
-  state.planConfig = { goal: 'fat_loss', split: 'ppl', daysPerWeek: 6, duration: 75, experience: 'intermediate', warmup: true, cardio: 'after' };
+  state.planConfig = { goal: 'fat_loss', daysPerWeek: 6, duration: 75, experience: 'intermediate', warmup: true, cardio: 'after' };
   state.activeWorkout = null;
   state.completedSets = {};
   state.tab = 'train';
@@ -748,10 +1036,8 @@ window.dismissRest = function() {
 function init() {
   tickRecovery();
   render();
-
   setInterval(tickRecovery, 60000);
 
-  // Register service worker with correct scope for GitHub Pages
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
       .then(() => console.log('SW registered'))
