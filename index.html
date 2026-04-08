@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0B1120" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="IronLog" />
+  <meta name="description" content="Personal workout tracker with PPL split, recovery tracking, and body composition logging." />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="/styles.css" />
+  <title>IronLog</title>
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-logo"><span>Iron</span>Log</div>
+      <div class="header-user">Bryan</div>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="content"></div>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="train" onclick="switchTab('train')">
+        <span class="tab-icon">⚡</span>
+        <span class="tab-label">Train</span>
+      </button>
+      <button class="tab-btn" data-tab="body" onclick="switchTab('body')">
+        <span class="tab-icon">🫀</span>
+        <span class="tab-label">Body</span>
+      </button>
+      <button class="tab-btn" data-tab="plan" onclick="switchTab('plan')">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Plan</span>
+      </button>
+      <button class="tab-btn" data-tab="log" onclick="switchTab('log')">
+        <span class="tab-icon">📊</span>
+        <span class="tab-label">Log</span>
+      </button>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
