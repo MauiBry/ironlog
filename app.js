@@ -72,9 +72,9 @@ const PPL_SCHEDULE = [
 // --- State ---
 let state = {
   tab: 'train',
-  activeWorkout: null,    // { type, startedAt }
-  completedSets: {},      // { "exId-setIdx": true }
-  restTimer: null,        // seconds or null
+  activeWorkout: null,
+  completedSets: {},
+  restTimer: null,
   restTimerInterval: null,
   restTimeLeft: 0,
   workoutLog: DB.get('workoutLog', []),
@@ -121,13 +121,12 @@ function save() {
   DB.set('planConfig', state.planConfig);
 }
 
-// Simulate recovery based on elapsed time
 function tickRecovery() {
   const now = Date.now();
   const elapsed = now - state.lastRecoveryUpdate;
   const hours = elapsed / (1000 * 60 * 60);
   if (hours >= 1) {
-    const increment = Math.floor(hours) * 4; // ~4% per hour
+    const increment = Math.floor(hours) * 4;
     for (const k in state.recovery) {
       state.recovery[k] = Math.min(100, state.recovery[k] + increment);
     }
@@ -141,7 +140,6 @@ function render() {
   const content = $('.content');
   if (!content) return;
 
-  // Update tab bar active states
   $$('.tab-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.tab === state.tab);
   });
@@ -204,7 +202,6 @@ function renderTrain(el) {
     </div>`;
   }
 
-  // Weekly schedule
   html += `<div style="margin-top:20px">
     <div style="font-size:13px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">This Week</div>
     <div class="week-grid">`;
@@ -267,7 +264,6 @@ function renderActiveWorkout(el) {
 function renderBody(el) {
   const recoveryColors = (val) => val >= 80 ? '#10B981' : val >= 50 ? '#F59E0B' : '#E8453C';
 
-  // Build sparkline points
   const hist = state.weightHistory;
   const minW = Math.min(...hist.map(h => h.weight));
   const maxW = Math.max(...hist.map(h => h.weight));
@@ -376,7 +372,6 @@ function renderPlan(el) {
     </div>`;
   });
 
-  // Days per week & duration
   html += `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div>
@@ -390,13 +385,12 @@ function renderPlan(el) {
     <div style="border-top:1px solid var(--card-border);padding-top:12px">
       <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Session Duration</div>
       <div style="display:flex;align-items:center;gap:12px">
-        <input type="range" min="30" max="120" step="5" value="${cfg.duration}" oninput="setPlan('duration',Number(this.value));$('#dur-val').textContent=this.value+'m'" />
+        <input type="range" min="30" max="120" step="5" value="${cfg.duration}" oninput="setPlan('duration',Number(this.value));document.getElementById('dur-val').textContent=this.value+'m'" />
         <span id="dur-val" style="font-size:16px;font-weight:600;font-family:var(--font-mono);min-width:55px">${cfg.duration}m</span>
       </div>
     </div>
   </div>`;
 
-  // Toggle
   html += `<div class="card">
     <div class="toggle-row">
       <span style="font-size:14px">Warm-up Sets</span>
@@ -511,7 +505,6 @@ window.finishWorkout = function() {
   save();
   render();
 
-  // Vibrate if supported
   if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
 };
 
@@ -522,7 +515,6 @@ window.logWeight = function() {
   if (isNaN(w) || w < 50 || w > 600) return;
   state.bodyWeight = w;
   const d = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  // Replace if same date, otherwise append
   const lastEntry = state.weightHistory[state.weightHistory.length - 1];
   if (lastEntry && lastEntry.date === d) {
     lastEntry.weight = w;
@@ -544,8 +536,7 @@ window.setPlan = function(key, value) {
 window.switchTab = function(tab) {
   state.tab = tab;
   render();
-  // Scroll to top
-  const content = $('.content');
+  const content = document.querySelector('.content');
   if (content) content.scrollTop = 0;
 };
 
@@ -606,12 +597,11 @@ function init() {
   tickRecovery();
   render();
 
-  // Periodic recovery tick
   setInterval(tickRecovery, 60000);
 
-  // Register service worker
+  // Register service worker with correct scope for GitHub Pages
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('sw.js')
       .then(() => console.log('SW registered'))
       .catch((err) => console.log('SW registration failed:', err));
   }

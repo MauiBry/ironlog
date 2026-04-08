@@ -2,20 +2,21 @@
   "name": "IronLog - Workout Tracker",
   "short_name": "IronLog",
   "description": "Personal workout tracker with PPL split, recovery tracking, and body composition logging.",
-  "start_url": "/",
+  "start_url": "/ironlog/",
+  "scope": "/ironlog/",
   "display": "standalone",
   "background_color": "#0B1120",
   "theme_color": "#10B981",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/ironlog/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/ironlog/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
