@@ -46,7 +46,7 @@ html, body {
 
 /* Header */
 .header {
-  padding: 12px 20px;
+  padding: calc(12px + env(safe-area-inset-top)) 20px 12px;
   border-bottom: 1px solid var(--card-border);
   display: flex;
   justify-content: space-between;
