@@ -77,13 +77,10 @@ let state = {
   restTimer: null,
   restTimerInterval: null,
   restTimeLeft: 0,
+  profile: DB.get('profile', null), // { name, startWeight, goalWeight }
   workoutLog: DB.get('workoutLog', []),
-  bodyWeight: DB.get('bodyWeight', 255),
-  weightHistory: DB.get('weightHistory', [
-    { date: "Mar 1", weight: 260 }, { date: "Mar 8", weight: 258 },
-    { date: "Mar 15", weight: 257 }, { date: "Mar 22", weight: 256 },
-    { date: "Mar 29", weight: 255.5 }, { date: "Apr 5", weight: 255 },
-  ]),
+  bodyWeight: DB.get('bodyWeight', null),
+  weightHistory: DB.get('weightHistory', []),
   recovery: DB.get('recovery', { push: 100, pull: 100, legs: 100, core: 100 }),
   lastRecoveryUpdate: DB.get('lastRecoveryUpdate', Date.now()),
   planConfig: DB.get('planConfig', {
@@ -113,6 +110,7 @@ function getTodayIndex() {
 }
 
 function save() {
+  DB.set('profile', state.profile);
   DB.set('workoutLog', state.workoutLog);
   DB.set('bodyWeight', state.bodyWeight);
   DB.set('weightHistory', state.weightHistory);
@@ -140,6 +138,24 @@ function render() {
   const content = $('.content');
   if (!content) return;
 
+  // Show onboarding if no profile
+  if (!state.profile) {
+    renderOnboarding(content);
+    const tabBar = $('.tab-bar');
+    if (tabBar) tabBar.style.display = 'none';
+    const headerUser = $('.header-user');
+    if (headerUser) headerUser.textContent = '';
+    return;
+  }
+
+  // Show tab bar
+  const tabBar = $('.tab-bar');
+  if (tabBar) tabBar.style.display = 'flex';
+
+  // Update header with user name
+  const headerUser = $('.header-user');
+  if (headerUser) headerUser.textContent = state.profile.name;
+
   $$('.tab-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.tab === state.tab);
   });
@@ -151,6 +167,91 @@ function render() {
     case 'log': renderLog(content); break;
   }
 }
+
+// --- Onboarding ---
+function renderOnboarding(el) {
+  el.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;padding:20px">
+      <div style="font-size:48px;margin-bottom:16px">🏋️</div>
+      <div style="font-size:28px;font-weight:800;margin-bottom:4px">
+        <span style="color:var(--accent)">Iron</span>Log
+      </div>
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:36px;text-align:center">
+        Set up your profile to get started
+      </div>
+
+      <div style="width:100%;max-width:320px">
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">
+            Your Name
+          </label>
+          <input type="text" id="onboard-name" placeholder="e.g. Bryan" autocomplete="given-name"
+            style="width:100%;background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:14px;color:var(--text);font-size:16px;font-family:var(--font-display);outline:none" />
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">
+            Current Weight (lb)
+          </label>
+          <input type="number" id="onboard-weight" placeholder="e.g. 255" inputmode="decimal"
+            style="width:100%;background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:14px;color:var(--text);font-size:16px;font-family:var(--font-mono);outline:none" />
+        </div>
+
+        <div style="margin-bottom:32px">
+          <label style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">
+            Goal Weight (lb)
+          </label>
+          <input type="number" id="onboard-goal" placeholder="e.g. 175" inputmode="decimal"
+            style="width:100%;background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:14px;color:var(--text);font-size:16px;font-family:var(--font-mono);outline:none" />
+        </div>
+
+        <button onclick="completeOnboarding()" style="
+          width:100%;padding:16px;background:var(--accent);color:#0B1120;
+          border:none;border-radius:14px;font-size:16px;font-weight:700;
+          cursor:pointer;font-family:var(--font-display);
+          box-shadow:0 4px 20px rgba(16,185,129,0.3);
+        ">
+          Let's Go
+        </button>
+
+        <div id="onboard-error" style="color:var(--danger);font-size:13px;text-align:center;margin-top:12px;display:none"></div>
+      </div>
+    </div>`;
+
+  setTimeout(() => {
+    const nameInput = document.getElementById('onboard-name');
+    if (nameInput) nameInput.focus();
+  }, 100);
+}
+
+window.completeOnboarding = function() {
+  const name = document.getElementById('onboard-name')?.value.trim();
+  const weight = parseFloat(document.getElementById('onboard-weight')?.value);
+  const goal = parseFloat(document.getElementById('onboard-goal')?.value);
+  const errEl = document.getElementById('onboard-error');
+
+  if (!name) {
+    if (errEl) { errEl.textContent = 'Please enter your name'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (isNaN(weight) || weight < 50 || weight > 600) {
+    if (errEl) { errEl.textContent = 'Please enter a valid current weight'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (isNaN(goal) || goal < 50 || goal > 600) {
+    if (errEl) { errEl.textContent = 'Please enter a valid goal weight'; errEl.style.display = 'block'; }
+    return;
+  }
+
+  const d = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  state.profile = { name, startWeight: weight, goalWeight: goal };
+  state.bodyWeight = weight;
+  state.weightHistory = [{ date: d, weight: weight }];
+  save();
+  render();
+
+  if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+};
 
 // --- Train Tab ---
 function renderTrain(el) {
@@ -265,18 +366,30 @@ function renderBody(el) {
   const recoveryColors = (val) => val >= 80 ? '#10B981' : val >= 50 ? '#F59E0B' : '#E8453C';
 
   const hist = state.weightHistory;
-  const minW = Math.min(...hist.map(h => h.weight));
-  const maxW = Math.max(...hist.map(h => h.weight));
-  const range = maxW - minW || 1;
-  let pathD = '';
-  let dots = '';
-  hist.forEach((p, i) => {
-    const x = (i / (hist.length - 1)) * 280 + 10;
-    const y = 55 - ((p.weight - minW) / range) * 45;
-    if (i === 0) pathD += `M${x},${y}`;
-    else pathD += ` L${x},${y}`;
-    dots += `<circle cx="${x}" cy="${y}" r="3" fill="var(--accent)" />`;
-  });
+  let sparkHtml = '';
+  if (hist.length >= 2) {
+    const minW = Math.min(...hist.map(h => h.weight));
+    const maxW = Math.max(...hist.map(h => h.weight));
+    const range = maxW - minW || 1;
+    let pathD = '';
+    let dots = '';
+    hist.forEach((p, i) => {
+      const x = (i / (hist.length - 1)) * 280 + 10;
+      const y = 55 - ((p.weight - minW) / range) * 45;
+      if (i === 0) pathD += `M${x},${y}`;
+      else pathD += ` L${x},${y}`;
+      dots += `<circle cx="${x}" cy="${y}" r="3" fill="var(--accent)" />`;
+    });
+    sparkHtml = `<svg viewBox="0 0 300 60" width="100%" height="60">
+      <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" />
+      ${dots}
+    </svg>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      ${hist.map(p => `<span style="font-size:9px;color:var(--text-muted)">${p.date}</span>`).join('')}
+    </div>`;
+  } else if (hist.length === 1) {
+    sparkHtml = `<div style="text-align:center;padding:12px 0;font-size:13px;color:var(--text-muted)">Log more weigh-ins to see your trend</div>`;
+  }
 
   let html = `
     <div style="font-size:22px;font-weight:700;margin-bottom:16px">Body</div>
@@ -286,19 +399,13 @@ function renderBody(el) {
         <div style="font-size:13px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">Weight</div>
         <div style="font-size:24px;font-weight:700;font-family:var(--font-mono)">${state.bodyWeight}<span style="font-size:14px;color:var(--text-muted)"> lb</span></div>
       </div>
-      <svg viewBox="0 0 300 60" width="100%" height="60">
-        <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" />
-        ${dots}
-      </svg>
-      <div style="display:flex;justify-content:space-between;margin-top:4px">
-        ${hist.map(p => `<span style="font-size:9px;color:var(--text-muted)">${p.date}</span>`).join('')}
-      </div>
+      ${sparkHtml}
       <div style="margin-top:12px;display:flex;gap:8px">
         <input type="number" id="weight-input" value="${state.bodyWeight}" style="flex:1" />
         <button onclick="logWeight()" style="background:var(--accent-dim);color:var(--accent);border:1px solid rgba(16,185,129,0.25);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">Log</button>
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center">
-        Goal: 175 lb · ${state.bodyWeight - 175} lb to go
+        Goal: ${state.profile.goalWeight} lb · ${Math.abs(state.bodyWeight - state.profile.goalWeight)} lb to ${state.bodyWeight > state.profile.goalWeight ? 'go' : 'gained'}
       </div>
     </div>
 
@@ -400,10 +507,33 @@ function renderPlan(el) {
     </div>
   </div>`;
 
+  // Profile section
+  html += `<div class="card" style="margin-top:8px">
+    <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Profile</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--card-border)">
+      <span style="font-size:14px">Name</span>
+      <span style="font-size:14px;color:var(--text-muted)">${state.profile.name}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--card-border)">
+      <span style="font-size:14px">Start Weight</span>
+      <span style="font-size:14px;color:var(--text-muted);font-family:var(--font-mono)">${state.profile.startWeight} lb</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--card-border)">
+      <span style="font-size:14px">Goal Weight</span>
+      <span style="font-size:14px;color:var(--text-muted);font-family:var(--font-mono)">${state.profile.goalWeight} lb</span>
+    </div>
+    <button onclick="resetProfile()" style="
+      width:100%;margin-top:12px;padding:12px;
+      background:transparent;border:1px solid var(--card-border);
+      border-radius:10px;color:var(--danger);font-size:13px;
+      font-weight:500;cursor:pointer;font-family:var(--font-display);
+    ">
+      Reset Profile
+    </button>
+  </div>`;
+
   el.innerHTML = html;
 }
-
-// --- Log Tab ---
 function renderLog(el) {
   const log = state.workoutLog;
 
@@ -530,6 +660,28 @@ window.logWeight = function() {
 window.setPlan = function(key, value) {
   state.planConfig[key] = value;
   save();
+  render();
+};
+
+window.resetProfile = function() {
+  if (!confirm('This will reset your profile and all data. Are you sure?')) return;
+  // Clear all ironlog data from localStorage
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('ironlog_')) keys.push(k);
+  }
+  keys.forEach(k => localStorage.removeItem(k));
+  // Reset state
+  state.profile = null;
+  state.workoutLog = [];
+  state.bodyWeight = null;
+  state.weightHistory = [];
+  state.recovery = { push: 100, pull: 100, legs: 100, core: 100 };
+  state.planConfig = { goal: 'fat_loss', split: 'ppl', daysPerWeek: 6, duration: 75, experience: 'intermediate', warmup: true, cardio: 'after' };
+  state.activeWorkout = null;
+  state.completedSets = {};
+  state.tab = 'train';
   render();
 };
 
