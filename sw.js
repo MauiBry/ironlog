@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ironlog-v2';
+const CACHE_NAME = 'ironlog-v3';
 const BASE = '/ironlog/';
 const ASSETS = [
   BASE,
@@ -28,11 +28,11 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
-// Fetch — cache-first for assets
+// Fetch strategy
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
 
-  // Google Fonts — cache-first
+  // Google Fonts — cache-first (these don't change)
   if (e.request.url.includes('fonts.googleapis.com') || e.request.url.includes('fonts.gstatic.com')) {
     e.respondWith(
       caches.match(e.request).then((cached) => {
@@ -47,20 +47,22 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // App assets — cache-first with network fallback
+  // App assets — network-first so deploys are picked up immediately,
+  // falls back to cache when offline
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      return cached || fetch(e.request).then((response) => {
-        if (response.status === 200 && e.request.url.startsWith(self.location.origin)) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
-        }
-        return response;
-      });
-    }).catch(() => {
-      if (e.request.mode === 'navigate') {
-        return caches.match(BASE + 'index.html');
+    fetch(e.request).then((response) => {
+      if (response.status === 200 && e.request.url.startsWith(self.location.origin)) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
       }
+      return response;
+    }).catch(() => {
+      return caches.match(e.request).then((cached) => {
+        if (cached) return cached;
+        if (e.request.mode === 'navigate') {
+          return caches.match(BASE + 'index.html');
+        }
+      });
     })
   );
 });
