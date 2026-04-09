@@ -188,6 +188,7 @@ let state = {
   tab: 'train',
   activeWorkout: null,
   completedSets: {},
+  setData: {},  // { "exId-setIdx": { weight: 135, reps: 10 } }
   restTimer: null,
   restTimerInterval: null,
   restTimeLeft: 0,
@@ -198,6 +199,9 @@ let state = {
   weightHistory: DB.get('weightHistory', []),
   recovery: DB.get('recovery', { push: 100, pull: 100, legs: 100, core: 100 }),
   lastRecoveryUpdate: DB.get('lastRecoveryUpdate', Date.now()),
+  restingHR: DB.get('restingHR', null),
+  hrHistory: DB.get('hrHistory', []),
+  baselineHR: DB.get('baselineHR', null),
   planConfig: DB.get('planConfig', {
     goal: "fat_loss",
     daysPerWeek: 6,
@@ -237,6 +241,9 @@ function save() {
   DB.set('weightHistory', state.weightHistory);
   DB.set('recovery', state.recovery);
   DB.set('lastRecoveryUpdate', state.lastRecoveryUpdate);
+  DB.set('restingHR', state.restingHR);
+  DB.set('hrHistory', state.hrHistory);
+  DB.set('baselineHR', state.baselineHR);
   DB.set('planConfig', state.planConfig);
 }
 
@@ -517,6 +524,9 @@ function renderActiveWorkout(el) {
   const done = Object.keys(state.completedSets).length;
   const elapsed = Math.round((Date.now() - startedAt) / 60000);
 
+  // Get last logged weights for this exercise type
+  const lastWeights = DB.get(`lastWeights_${type}`, {});
+
   let html = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div>
@@ -528,23 +538,52 @@ function renderActiveWorkout(el) {
     <div class="progress-bar"><div class="progress-fill" style="width:${(done / totalSets) * 100}%"></div></div>`;
 
   exercises.forEach((ex) => {
+    const lastW = lastWeights[ex.id] || '';
     html += `<div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
         <div>
           <div style="font-size:16px;font-weight:600">${ex.name}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${ex.equipment} · ${ex.muscles.join(', ')}</div>
         </div>
         <div style="font-size:12px;color:var(--text-muted);text-align:right">${ex.reps} reps<br>${ex.rest}s rest</div>
-      </div>
-      <div class="set-grid">`;
+      </div>`;
+
+    // Header row
+    html += `<div style="display:flex;gap:8px;margin-bottom:6px;padding:0 2px">
+      <div style="width:36px;font-size:10px;color:var(--text-muted);text-align:center;font-weight:600">SET</div>
+      <div style="flex:1;font-size:10px;color:var(--text-muted);text-align:center;font-weight:600">LBS</div>
+      <div style="flex:1;font-size:10px;color:var(--text-muted);text-align:center;font-weight:600">REPS</div>
+      <div style="width:44px;font-size:10px;color:var(--text-muted);text-align:center;font-weight:600"></div>
+    </div>`;
 
     for (let i = 0; i < ex.sets; i++) {
       const key = `${ex.id}-${i}`;
       const isDone = state.completedSets[key];
-      html += `<button class="set-btn ${isDone ? 'done' : ''}" onclick="toggleSet('${ex.id}',${i},${ex.rest})">${isDone ? '✓' : 'S' + (i + 1)}</button>`;
+      const data = state.setData[key] || {};
+      const weightVal = data.weight !== undefined ? data.weight : (lastW || '');
+      const repsVal = data.reps !== undefined ? data.reps : '';
+
+      html += `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px" class="set-row ${isDone ? 'set-done' : ''}">
+        <div style="width:36px;text-align:center;font-size:13px;font-weight:600;color:${isDone ? 'var(--accent)' : 'var(--text-muted)'};font-family:var(--font-mono)">${i + 1}</div>
+        <input type="number" inputmode="decimal" placeholder="—"
+          id="w-${key}" value="${weightVal}"
+          onchange="updateSetData('${key}','weight',this.value)"
+          style="flex:1;background:${isDone ? 'rgba(59,130,246,0.08)' : 'var(--bg)'};border:1px solid ${isDone ? 'rgba(59,130,246,0.3)' : 'var(--card-border)'};border-radius:8px;padding:10px 8px;color:var(--text);font-size:14px;font-family:var(--font-mono);text-align:center;outline:none;-webkit-appearance:none" />
+        <input type="number" inputmode="numeric" placeholder="—"
+          id="r-${key}" value="${repsVal}"
+          onchange="updateSetData('${key}','reps',this.value)"
+          style="flex:1;background:${isDone ? 'rgba(59,130,246,0.08)' : 'var(--bg)'};border:1px solid ${isDone ? 'rgba(59,130,246,0.3)' : 'var(--card-border)'};border-radius:8px;padding:10px 8px;color:var(--text);font-size:14px;font-family:var(--font-mono);text-align:center;outline:none;-webkit-appearance:none" />
+        <button onclick="toggleSet('${ex.id}',${i},${ex.rest})" style="
+          width:44px;height:40px;border-radius:8px;border:none;
+          background:${isDone ? 'var(--accent)' : 'var(--card-border)'};
+          color:${isDone ? '#fff' : 'var(--text-muted)'};
+          font-size:16px;font-weight:700;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;
+        ">${isDone ? '✓' : '○'}</button>
+      </div>`;
     }
 
-    html += `</div></div>`;
+    html += `</div>`;
   });
 
   el.innerHTML = html;
@@ -580,6 +619,70 @@ function renderBody(el) {
     sparkHtml = `<div style="text-align:center;padding:12px 0;font-size:13px;color:var(--text-muted)">Log more weigh-ins to see your trend</div>`;
   }
 
+  // --- HR Recovery Score ---
+  let hrRecoveryScore = null;
+  let hrRecoveryColor = 'var(--text-muted)';
+  let hrRecoveryLabel = '';
+  if (state.restingHR && state.baselineHR) {
+    const diff = state.restingHR - state.baselineHR;
+    // Score: baseline = 100%, each bpm above baseline reduces score
+    // 0-2 above = fully recovered, 3-5 = moderate, 6-9 = fatigued, 10+ = overtrained
+    if (diff <= 2) {
+      hrRecoveryScore = 100;
+      hrRecoveryColor = '#22C55E';
+      hrRecoveryLabel = 'Fully Recovered';
+    } else if (diff <= 5) {
+      hrRecoveryScore = 80 - (diff - 3) * 10;
+      hrRecoveryColor = '#FBBF24';
+      hrRecoveryLabel = 'Moderate Fatigue';
+    } else if (diff <= 9) {
+      hrRecoveryScore = 50 - (diff - 6) * 8;
+      hrRecoveryColor = '#F97316';
+      hrRecoveryLabel = 'Elevated — Consider Rest';
+    } else {
+      hrRecoveryScore = Math.max(5, 20 - (diff - 10) * 5);
+      hrRecoveryColor = '#EF4444';
+      hrRecoveryLabel = 'Overtrained — Rest Day';
+    }
+    hrRecoveryScore = Math.max(5, Math.min(100, hrRecoveryScore));
+  }
+
+  // HR sparkline
+  const hrHist = state.hrHistory;
+  let hrSparkHtml = '';
+  if (hrHist.length >= 2) {
+    const minHR = Math.min(...hrHist.map(h => h.hr)) - 2;
+    const maxHR = Math.max(...hrHist.map(h => h.hr)) + 2;
+    const range = maxHR - minHR || 1;
+    let pathD = '';
+    let dots = '';
+    hrHist.forEach((p, i) => {
+      const x = (i / (hrHist.length - 1)) * 280 + 10;
+      const y = 55 - ((p.hr - minHR) / range) * 45;
+      if (i === 0) pathD += `M${x},${y}`;
+      else pathD += ` L${x},${y}`;
+      // Color dot based on deviation from baseline
+      let dotColor = '#22C55E';
+      if (state.baselineHR) {
+        const d = p.hr - state.baselineHR;
+        if (d > 5) dotColor = '#F97316';
+        else if (d > 2) dotColor = '#FBBF24';
+      }
+      dots += `<circle cx="${x}" cy="${y}" r="3" fill="${dotColor}" />`;
+    });
+    hrSparkHtml = `<svg viewBox="0 0 300 60" width="100%" height="60" style="margin-top:8px">
+      <path d="${pathD}" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+      ${dots}
+      ${state.baselineHR ? (() => {
+        const baseY = 55 - ((state.baselineHR - minHR) / range) * 45;
+        return `<line x1="10" y1="${baseY}" x2="290" y2="${baseY}" stroke="#22C55E" stroke-width="1" stroke-dasharray="4,3" opacity="0.5" />`;
+      })() : ''}
+    </svg>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      ${hrHist.map(p => `<span style="font-size:9px;color:var(--text-muted)">${p.date}</span>`).join('')}
+    </div>`;
+  }
+
   let html = `
     <div style="font-size:22px;font-weight:700;margin-bottom:16px">Body</div>
 
@@ -598,8 +701,75 @@ function renderBody(el) {
       </div>
     </div>
 
+    <!-- Resting Heart Rate Card -->
     <div class="card">
-      <div style="font-size:13px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Recovery Status</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:13px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">Resting HR</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${state.restingHR ? `<span style="font-size:24px;font-weight:700;font-family:var(--font-mono);color:${hrRecoveryColor || 'var(--text)'}">${state.restingHR}</span>` : ''}
+          <span style="font-size:14px;color:var(--text-muted)">bpm</span>
+        </div>
+      </div>`;
+
+  // Recovery score gauge
+  if (hrRecoveryScore !== null) {
+    html += `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid var(--card-border)">
+        <div style="position:relative;width:48px;height:48px;flex-shrink:0">
+          <svg viewBox="0 0 48 48" width="48" height="48">
+            <circle cx="24" cy="24" r="20" fill="none" stroke="var(--card-border)" stroke-width="4" />
+            <circle cx="24" cy="24" r="20" fill="none" stroke="${hrRecoveryColor}" stroke-width="4"
+              stroke-dasharray="${2 * Math.PI * 20}"
+              stroke-dashoffset="${2 * Math.PI * 20 * (1 - hrRecoveryScore / 100)}"
+              stroke-linecap="round" transform="rotate(-90 24 24)" />
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--font-mono);color:${hrRecoveryColor}">${hrRecoveryScore}</div>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:${hrRecoveryColor}">${hrRecoveryLabel}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${state.restingHR - state.baselineHR > 0 ? '+' : ''}${state.restingHR - state.baselineHR} bpm from baseline (${state.baselineHR} bpm)</div>
+        </div>
+      </div>`;
+  }
+
+  // HR sparkline
+  html += hrSparkHtml;
+
+  // HR input row
+  html += `
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <input type="number" id="hr-input" placeholder="${state.restingHR || 'e.g. 62'}" inputmode="numeric"
+          style="flex:1;background:var(--bg);border:1px solid var(--card-border);border-radius:8px;padding:10px;
+          color:var(--text);font-size:14px;font-family:var(--font-mono);outline:none;-webkit-appearance:none;text-align:center" />
+        <button onclick="logHR()" style="background:rgba(239,68,68,0.12);color:#EF4444;border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">Log</button>
+      </div>`;
+
+  // Baseline setter
+  if (!state.baselineHR) {
+    html += `
+      <div style="margin-top:10px;padding:10px;background:rgba(59,130,246,0.06);border:1px dashed rgba(59,130,246,0.3);border-radius:8px;text-align:center">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Set your resting baseline to enable recovery scoring</div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <input type="number" id="baseline-hr-input" placeholder="e.g. 60" inputmode="numeric"
+            style="width:80px;background:var(--bg);border:1px solid var(--card-border);border-radius:8px;padding:8px;
+            color:var(--text);font-size:14px;font-family:var(--font-mono);outline:none;-webkit-appearance:none;text-align:center" />
+          <button onclick="setBaselineHR()" style="background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer">Set Baseline</button>
+        </div>
+      </div>`;
+  } else {
+    html += `
+      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:11px;color:var(--text-muted)">Baseline: ${state.baselineHR} bpm</div>
+        <button onclick="resetBaseline()" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;text-decoration:underline;font-family:var(--font-display)">Reset</button>
+      </div>`;
+  }
+
+  html += `</div>
+
+    <div class="card">
+      <div style="font-size:13px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">Muscle Recovery</div>
       <div class="stat-grid">`;
 
   Object.entries(state.recovery).forEach(([key, val]) => {
@@ -634,98 +804,123 @@ function renderBody(el) {
 function renderPlan(el) {
   const cfg = state.planConfig;
   const currentProg = PROGRAMS[state.program] || PROGRAMS.ppl;
+  const schedule = currentProg.schedule;
 
   let html = `<div style="font-size:22px;font-weight:700;margin-bottom:16px">Training Plan</div>`;
 
-  // Current program card with change button
-  html += `<div class="card" style="border-color:var(--accent);border-width:1px;background:linear-gradient(135deg,var(--card),rgba(59,130,246,0.06))">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+  // Compact program card — horizontal schedule as pill row
+  html += `<div class="card" style="border-color:rgba(59,130,246,0.3);background:linear-gradient(135deg,var(--card),rgba(59,130,246,0.06))">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div>
-        <div style="font-size:12px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Current Program</div>
-        <div style="font-size:18px;font-weight:700">${currentProg.name}</div>
+        <div style="font-size:11px;color:var(--accent);letter-spacing:1px;text-transform:uppercase">Program</div>
+        <div style="font-size:17px;font-weight:700;margin-top:2px">${currentProg.name}</div>
       </div>
       <button onclick="showProgramModal()" style="
         background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,130,246,0.25);
-        border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;
+        border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;
         font-family:var(--font-display);
       ">Change</button>
     </div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">${currentProg.desc}</div>
-    <div class="program-card-schedule">
-      ${currentProg.preview.map((d, i) => {
-        const dayLabels = ['M','T','W','T','F','S','S'];
-        const isRest = d === 'Rest';
-        return `<div class="program-card-day" style="${isRest ? '' : 'color:var(--accent)'}">${dayLabels[i]}<br>${d}</div>`;
+    <div style="display:flex;gap:4px">
+      ${schedule.map((d, i) => {
+        const grp = d.type ? getGroupForType(d.type) : null;
+        return `<div style="flex:1;text-align:center;padding:6px 2px;border-radius:8px;background:var(--bg);border:1px solid var(--card-border)">
+          <div style="font-size:10px;font-weight:600;color:var(--text-muted)">${d.day}</div>
+          <div style="font-size:9px;margin-top:2px;font-weight:600;color:${grp ? grp.color : 'var(--text-muted)'}">${grp ? grp.name : 'Rest'}</div>
+        </div>`;
       }).join('')}
     </div>
   </div>`;
 
-  const sections = [
-    { label: 'Goal', key: 'goal', options: [
-      { value: 'fat_loss', label: 'Fat Loss' },
-      { value: 'muscle', label: 'Build Muscle' },
-      { value: 'strength', label: 'Strength' },
-      { value: 'endurance', label: 'Endurance' },
-    ]},
-    { label: 'Experience', key: 'experience', options: [
-      { value: 'beginner', label: 'Beginner' },
-      { value: 'intermediate', label: 'Intermediate' },
-      { value: 'advanced', label: 'Advanced' },
-    ]},
-    { label: 'Cardio', key: 'cardio', options: [
-      { value: 'off', label: 'Off' },
-      { value: 'before', label: 'Before Lifting' },
-      { value: 'after', label: 'After Lifting' },
-    ]},
-  ];
-
-  sections.forEach((sec) => {
-    html += `<div class="card">
-      <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">${sec.label}</div>
-      <div class="chip-row">
-        ${sec.options.map(opt => `<button class="chip ${cfg[sec.key] === opt.value ? 'active' : ''}" onclick="setPlan('${sec.key}','${opt.value}')">${opt.label}</button>`).join('')}
+  // Goal + Experience in one card, side by side
+  html += `<div class="card" style="padding:14px">
+    <div style="display:flex;gap:16px">
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Goal</div>
+        ${[
+          { value: 'fat_loss', label: 'Fat Loss' },
+          { value: 'muscle', label: 'Muscle' },
+          { value: 'strength', label: 'Strength' },
+          { value: 'endurance', label: 'Endurance' },
+        ].map(opt => `<button onclick="setPlan('goal','${opt.value}')" style="
+          display:block;width:100%;text-align:left;padding:7px 10px;margin-bottom:4px;
+          border-radius:7px;border:none;font-size:13px;font-weight:500;cursor:pointer;
+          font-family:var(--font-display);transition:all 0.15s;
+          background:${cfg.goal === opt.value ? 'var(--accent-dim)' : 'transparent'};
+          color:${cfg.goal === opt.value ? 'var(--accent)' : 'var(--text-muted)'};
+        ">${cfg.goal === opt.value ? '● ' : ''}${opt.label}</button>`).join('')}
       </div>
-    </div>`;
-  });
-
-  html += `<div class="card">
-    <div style="border-bottom:1px solid var(--card-border);padding-bottom:12px;margin-bottom:12px">
-      <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Session Duration</div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <input type="range" min="30" max="120" step="5" value="${cfg.duration}" oninput="setPlan('duration',Number(this.value));document.getElementById('dur-val').textContent=this.value+'m'" />
-        <span id="dur-val" style="font-size:16px;font-weight:600;font-family:var(--font-mono);min-width:55px">${cfg.duration}m</span>
+      <div style="width:1px;background:var(--card-border)"></div>
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Level</div>
+        ${[
+          { value: 'beginner', label: 'Beginner' },
+          { value: 'intermediate', label: 'Intermediate' },
+          { value: 'advanced', label: 'Advanced' },
+        ].map(opt => `<button onclick="setPlan('experience','${opt.value}')" style="
+          display:block;width:100%;text-align:left;padding:7px 10px;margin-bottom:4px;
+          border-radius:7px;border:none;font-size:13px;font-weight:500;cursor:pointer;
+          font-family:var(--font-display);transition:all 0.15s;
+          background:${cfg.experience === opt.value ? 'var(--accent-dim)' : 'transparent'};
+          color:${cfg.experience === opt.value ? 'var(--accent)' : 'var(--text-muted)'};
+        ">${cfg.experience === opt.value ? '● ' : ''}${opt.label}</button>`).join('')}
       </div>
     </div>
-    <div class="toggle-row">
-      <span style="font-size:14px">Warm-up Sets</span>
+  </div>`;
+
+  // Cardio + Duration + Warmup combined
+  html += `<div class="card" style="padding:14px">
+    <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Cardio</div>
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      ${[
+        { value: 'off', label: 'Off' },
+        { value: 'before', label: 'Before' },
+        { value: 'after', label: 'After' },
+      ].map(opt => `<button class="chip ${cfg.cardio === opt.value ? 'active' : ''}" onclick="setPlan('cardio','${opt.value}')" style="flex:1;text-align:center;padding:8px 0">${opt.label}</button>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--card-border)">
+      <div>
+        <div style="font-size:13px;font-weight:500">Session Duration</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="range" min="30" max="120" step="5" value="${cfg.duration}"
+          oninput="setPlan('duration',Number(this.value));document.getElementById('dur-val').textContent=this.value+'m'"
+          style="width:100px" />
+        <span id="dur-val" style="font-size:15px;font-weight:600;font-family:var(--font-mono);min-width:40px">${cfg.duration}m</span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--card-border)">
+      <span style="font-size:13px;font-weight:500">Warm-up Sets</span>
       <button class="toggle-track ${cfg.warmup ? 'on' : 'off'}" onclick="setPlan('warmup',${!cfg.warmup})">
         <div class="toggle-thumb"></div>
       </button>
     </div>
   </div>`;
 
-  // Profile section
-  html += `<div class="card" style="margin-top:8px">
-    <div style="font-size:12px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Profile</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--card-border)">
-      <span style="font-size:14px">Name</span>
-      <span style="font-size:14px;color:var(--text-muted)">${state.profile.name}</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--card-border)">
-      <span style="font-size:14px">Start Weight</span>
-      <span style="font-size:14px;color:var(--text-muted);font-family:var(--font-mono)">${state.profile.startWeight} lb</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--card-border)">
-      <span style="font-size:14px">Goal Weight</span>
-      <span style="font-size:14px;color:var(--text-muted);font-family:var(--font-mono)">${state.profile.goalWeight} lb</span>
+  // Profile — compact
+  html += `<div class="card" style="padding:14px">
+    <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Profile</div>
+    <div style="display:flex;gap:12px;margin-bottom:10px">
+      <div style="flex:1;background:var(--bg);border-radius:8px;padding:10px;border:1px solid var(--card-border)">
+        <div style="font-size:10px;color:var(--text-muted)">Name</div>
+        <div style="font-size:14px;font-weight:600;margin-top:2px">${state.profile.name}</div>
+      </div>
+      <div style="flex:1;background:var(--bg);border-radius:8px;padding:10px;border:1px solid var(--card-border)">
+        <div style="font-size:10px;color:var(--text-muted)">Start</div>
+        <div style="font-size:14px;font-weight:600;margin-top:2px;font-family:var(--font-mono)">${state.profile.startWeight}<span style="font-size:11px;color:var(--text-muted)"> lb</span></div>
+      </div>
+      <div style="flex:1;background:var(--bg);border-radius:8px;padding:10px;border:1px solid var(--card-border)">
+        <div style="font-size:10px;color:var(--text-muted)">Goal</div>
+        <div style="font-size:14px;font-weight:600;margin-top:2px;font-family:var(--font-mono)">${state.profile.goalWeight}<span style="font-size:11px;color:var(--text-muted)"> lb</span></div>
+      </div>
     </div>
     <button onclick="resetProfile()" style="
-      width:100%;margin-top:12px;padding:12px;
+      width:100%;padding:10px;
       background:transparent;border:1px solid var(--card-border);
-      border-radius:10px;color:var(--danger);font-size:13px;
+      border-radius:8px;color:var(--danger);font-size:12px;
       font-weight:500;cursor:pointer;font-family:var(--font-display);
     ">
-      Reset Profile
+      Reset All Data
     </button>
   </div>`;
 
@@ -878,12 +1073,31 @@ function renderLog(el) {
 window.startWorkout = function(type) {
   state.activeWorkout = { type, startedAt: Date.now() };
   state.completedSets = {};
+  state.setData = {};
   state.tab = 'train';
   render();
 };
 
+window.updateSetData = function(key, field, value) {
+  if (!state.setData[key]) state.setData[key] = {};
+  state.setData[key][field] = value === '' ? undefined : parseFloat(value);
+};
+
 window.toggleSet = function(exId, setIdx, restSec) {
   const key = `${exId}-${setIdx}`;
+
+  // Capture current input values before re-render
+  const wInput = document.getElementById(`w-${key}`);
+  const rInput = document.getElementById(`r-${key}`);
+  if (wInput && wInput.value !== '') {
+    if (!state.setData[key]) state.setData[key] = {};
+    state.setData[key].weight = parseFloat(wInput.value);
+  }
+  if (rInput && rInput.value !== '') {
+    if (!state.setData[key]) state.setData[key] = {};
+    state.setData[key].reps = parseFloat(rInput.value);
+  }
+
   if (state.completedSets[key]) {
     delete state.completedSets[key];
     render();
@@ -896,30 +1110,72 @@ window.toggleSet = function(exId, setIdx, restSec) {
 
 window.finishWorkout = function() {
   if (!state.activeWorkout) return;
-  const exercises = EXERCISES[state.activeWorkout.type] || [];
+  const type = state.activeWorkout.type;
+  const exercises = EXERCISES[type] || [];
   const totalSets = exercises.reduce((s, e) => s + e.sets, 0);
   const done = Object.keys(state.completedSets).length;
   const now = new Date();
 
-  const group = getGroupForType(state.activeWorkout.type);
+  const group = getGroupForType(type);
+
+  // Capture any unsaved input values
+  exercises.forEach(ex => {
+    for (let i = 0; i < ex.sets; i++) {
+      const key = `${ex.id}-${i}`;
+      const wInput = document.getElementById(`w-${key}`);
+      const rInput = document.getElementById(`r-${key}`);
+      if (wInput && wInput.value !== '') {
+        if (!state.setData[key]) state.setData[key] = {};
+        state.setData[key].weight = parseFloat(wInput.value);
+      }
+      if (rInput && rInput.value !== '') {
+        if (!state.setData[key]) state.setData[key] = {};
+        state.setData[key].reps = parseFloat(rInput.value);
+      }
+    }
+  });
+
+  // Save last weights per exercise for auto-fill next session
+  const lastWeights = {};
+  exercises.forEach(ex => {
+    for (let i = ex.sets - 1; i >= 0; i--) {
+      const key = `${ex.id}-${i}`;
+      const d = state.setData[key];
+      if (d && d.weight) {
+        lastWeights[ex.id] = d.weight;
+        break;
+      }
+    }
+  });
+  DB.set(`lastWeights_${type}`, lastWeights);
+
+  // Build detailed set log
+  const setDetails = {};
+  Object.entries(state.setData).forEach(([key, data]) => {
+    if (state.completedSets[key]) {
+      setDetails[key] = data;
+    }
+  });
 
   const entry = {
     date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    type: state.activeWorkout.type,
+    type,
     label: group.name,
     duration: Math.round((Date.now() - state.activeWorkout.startedAt) / 60000),
     setsCompleted: done,
     totalSets,
+    setDetails,
     timestamp: Date.now(),
   };
 
   state.workoutLog.unshift(entry);
-  if (state.recovery[state.activeWorkout.type] !== undefined) {
-    state.recovery[state.activeWorkout.type] = Math.max(0, state.recovery[state.activeWorkout.type] - 60);
+  if (state.recovery[type] !== undefined) {
+    state.recovery[type] = Math.max(0, state.recovery[type] - 60);
   }
   state.lastRecoveryUpdate = Date.now();
   state.activeWorkout = null;
   state.completedSets = {};
+  state.setData = {};
   state.tab = 'log';
   save();
   render();
@@ -946,6 +1202,46 @@ window.logWeight = function() {
   if (navigator.vibrate) navigator.vibrate(50);
 };
 
+window.logHR = function() {
+  const input = document.getElementById('hr-input');
+  if (!input) return;
+  const hr = parseInt(input.value);
+  if (isNaN(hr) || hr < 30 || hr > 220) return;
+  state.restingHR = hr;
+  const d = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const lastEntry = state.hrHistory[state.hrHistory.length - 1];
+  if (lastEntry && lastEntry.date === d) {
+    lastEntry.hr = hr;
+  } else {
+    state.hrHistory.push({ date: d, hr });
+    if (state.hrHistory.length > 30) state.hrHistory.shift();
+  }
+  // Auto-set baseline from first entry if not set
+  if (!state.baselineHR && state.hrHistory.length === 1) {
+    state.baselineHR = hr;
+  }
+  save();
+  render();
+  if (navigator.vibrate) navigator.vibrate(50);
+};
+
+window.setBaselineHR = function() {
+  const input = document.getElementById('baseline-hr-input');
+  if (!input) return;
+  const hr = parseInt(input.value);
+  if (isNaN(hr) || hr < 30 || hr > 220) return;
+  state.baselineHR = hr;
+  save();
+  render();
+  if (navigator.vibrate) navigator.vibrate(50);
+};
+
+window.resetBaseline = function() {
+  state.baselineHR = null;
+  save();
+  render();
+};
+
 window.setPlan = function(key, value) {
   state.planConfig[key] = value;
   save();
@@ -965,10 +1261,14 @@ window.resetProfile = function() {
   state.workoutLog = [];
   state.bodyWeight = null;
   state.weightHistory = [];
+  state.restingHR = null;
+  state.hrHistory = [];
+  state.baselineHR = null;
   state.recovery = { push: 100, pull: 100, legs: 100, core: 100 };
   state.planConfig = { goal: 'fat_loss', daysPerWeek: 6, duration: 75, experience: 'intermediate', warmup: true, cardio: 'after' };
   state.activeWorkout = null;
   state.completedSets = {};
+  state.setData = {};
   state.tab = 'train';
   render();
 };
