@@ -1249,13 +1249,21 @@ window.logWeight = function() {
   const w = parseFloat(input.value);
   if (isNaN(w) || w < 50 || w > 600) return;
   state.bodyWeight = w;
+  const now = Date.now();
   const d = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const lastEntry = state.weightHistory[state.weightHistory.length - 1];
-  if (lastEntry && lastEntry.date === d) {
+
+  // Only dedupe if same value logged within 1 minute (accidental double-tap)
+  if (lastEntry && lastEntry.date === d && lastEntry.weight === w && lastEntry.ts && (now - lastEntry.ts) < 60000) {
+    return;
+  }
+
+  // Overwrite if same date AND same session (within 5 min), otherwise add new entry
+  if (lastEntry && lastEntry.date === d && lastEntry.ts && (now - lastEntry.ts) < 300000) {
     lastEntry.weight = w;
+    lastEntry.ts = now;
   } else {
-    state.weightHistory.push({ date: d, weight: w });
-    if (state.weightHistory.length > 30) state.weightHistory.shift();
+    state.weightHistory.push({ date: d, weight: w, ts: now });
   }
   save();
   render();
@@ -1274,7 +1282,6 @@ window.logHR = function() {
     lastEntry.hr = hr;
   } else {
     state.hrHistory.push({ date: d, hr });
-    if (state.hrHistory.length > 30) state.hrHistory.shift();
   }
   // Auto-set baseline from first entry if not set
   if (!state.baselineHR && state.hrHistory.length === 1) {
