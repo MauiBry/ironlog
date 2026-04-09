@@ -594,29 +594,89 @@ function renderBody(el) {
   const recoveryColors = (val) => val >= 80 ? '#22C55E' : val >= 50 ? '#FBBF24' : '#EF4444';
 
   const hist = state.weightHistory;
-  let sparkHtml = '';
+
+  // Weight trend section
+  let trendHtml = '';
   if (hist.length >= 2) {
-    const minW = Math.min(...hist.map(h => h.weight));
-    const maxW = Math.max(...hist.map(h => h.weight));
+    const latest = hist[hist.length - 1].weight;
+    const first = hist[0].weight;
+    const prev = hist[hist.length - 2].weight;
+    const totalDelta = latest - first;
+    const lastDelta = latest - prev;
+
+    // Sparkline chart
+    const minW = Math.min(...hist.map(h => h.weight)) - 1;
+    const maxW = Math.max(...hist.map(h => h.weight)) + 1;
     const range = maxW - minW || 1;
+    const chartW = 280;
+    const chartH = 80;
+    const padX = 10;
+    const padY = 8;
+
     let pathD = '';
+    let areaD = '';
     let dots = '';
     hist.forEach((p, i) => {
-      const x = (i / (hist.length - 1)) * 280 + 10;
-      const y = 55 - ((p.weight - minW) / range) * 45;
-      if (i === 0) pathD += `M${x},${y}`;
-      else pathD += ` L${x},${y}`;
-      dots += `<circle cx="${x}" cy="${y}" r="3" fill="var(--accent)" />`;
+      const x = (i / (hist.length - 1)) * chartW + padX;
+      const y = (chartH - padY) - ((p.weight - minW) / range) * (chartH - padY * 2);
+      if (i === 0) {
+        pathD += `M${x},${y}`;
+        areaD += `M${x},${chartH} L${x},${y}`;
+      } else {
+        pathD += ` L${x},${y}`;
+        areaD += ` L${x},${y}`;
+      }
+      if (i === hist.length - 1) {
+        areaD += ` L${x},${chartH}`;
+      }
+      // Bigger dot on last point
+      const r = i === hist.length - 1 ? 4 : 2.5;
+      dots += `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--accent)" />`;
     });
-    sparkHtml = `<svg viewBox="0 0 300 60" width="100%" height="60">
-      <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" />
-      ${dots}
-    </svg>
-    <div style="display:flex;justify-content:space-between;margin-top:4px">
-      ${hist.map(p => `<span style="font-size:9px;color:var(--text-muted)">${p.date}</span>`).join('')}
-    </div>`;
+
+    // Goal line
+    const goalY = (chartH - padY) - ((state.profile.goalWeight - minW) / range) * (chartH - padY * 2);
+    const goalInRange = goalY > 0 && goalY < chartH;
+
+    trendHtml = `
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1;background:var(--bg);border-radius:8px;padding:8px 10px;border:1px solid var(--card-border)">
+          <div style="font-size:10px;color:var(--text-muted)">Since Start</div>
+          <div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${totalDelta <= 0 ? '#22C55E' : '#EF4444'};margin-top:2px">
+            ${totalDelta > 0 ? '+' : ''}${totalDelta.toFixed(1)} lb
+          </div>
+        </div>
+        <div style="flex:1;background:var(--bg);border-radius:8px;padding:8px 10px;border:1px solid var(--card-border)">
+          <div style="font-size:10px;color:var(--text-muted)">Last Change</div>
+          <div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:${lastDelta <= 0 ? '#22C55E' : '#EF4444'};margin-top:2px">
+            ${lastDelta > 0 ? '+' : ''}${lastDelta.toFixed(1)} lb
+          </div>
+        </div>
+        <div style="flex:1;background:var(--bg);border-radius:8px;padding:8px 10px;border:1px solid var(--card-border)">
+          <div style="font-size:10px;color:var(--text-muted)">Entries</div>
+          <div style="font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--accent);margin-top:2px">${hist.length}</div>
+        </div>
+      </div>
+      <svg viewBox="0 0 300 ${chartH}" width="100%" height="${chartH}" style="display:block">
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.2" />
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path d="${areaD} Z" fill="url(#areaGrad)" />
+        <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        ${goalInRange ? `<line x1="${padX}" y1="${goalY}" x2="${chartW + padX}" y2="${goalY}" stroke="#22C55E" stroke-width="1" stroke-dasharray="4,3" opacity="0.5" />
+        <text x="${chartW + padX - 2}" y="${goalY - 4}" fill="#22C55E" font-size="8" font-family="var(--font-mono)" text-anchor="end" opacity="0.7">Goal</text>` : ''}
+        ${dots}
+      </svg>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;padding:0 4px">
+        <span style="font-size:9px;color:var(--text-muted)">${hist[0].date}</span>
+        ${hist.length > 2 ? `<span style="font-size:9px;color:var(--text-muted)">${hist[Math.floor(hist.length / 2)].date}</span>` : ''}
+        <span style="font-size:9px;color:var(--text-muted)">${hist[hist.length - 1].date}</span>
+      </div>`;
   } else if (hist.length === 1) {
-    sparkHtml = `<div style="text-align:center;padding:12px 0;font-size:13px;color:var(--text-muted)">Log more weigh-ins to see your trend</div>`;
+    trendHtml = `<div style="text-align:center;padding:16px 0;font-size:13px;color:var(--text-muted)">Log daily weigh-ins to see your trend chart</div>`;
   }
 
   // --- HR Recovery Score ---
@@ -691,7 +751,7 @@ function renderBody(el) {
         <div style="font-size:13px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase">Weight</div>
         <div style="font-size:24px;font-weight:700;font-family:var(--font-mono)">${state.bodyWeight}<span style="font-size:14px;color:var(--text-muted)"> lb</span></div>
       </div>
-      ${sparkHtml}
+      ${trendHtml}
       <div style="margin-top:12px;display:flex;gap:8px">
         <input type="number" id="weight-input" value="${state.bodyWeight}" style="flex:1" />
         <button onclick="logWeight()" style="background:var(--accent-dim);color:var(--accent);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer">Log</button>
